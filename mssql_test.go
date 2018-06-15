@@ -57,6 +57,7 @@ func newConnParams() connParams {
 		params["uid"] = *msuser
 		params["pwd"] = *mspass
 		params["port"] = *msport
+		params["TDS_Version"] = "8.0"
 		//params["clientcharset"] = "UTF-8"
 		//params["debugflags"] = "0xffff"
 	} else {
@@ -172,7 +173,7 @@ func serverVersion(db *sql.DB) (sqlVersion, sqlPartNumber, osVersion string, err
 	for i := range a {
 		a[i] = strings.Trim(a[i], " \t")
 	}
-	l1 := strings.SplitN(a[0], "-", -1)
+	l1 := strings.SplitN(a[0], "- ", -1)
 	if len(l1) != 2 {
 		return "", "", "", errors.New("SQL Server version first line must have - in it: " + v)
 	}
@@ -677,6 +678,10 @@ var typeMSSQL2008Tests = []typeTest{
 	{"select cast('20151225' as datetime2)", match(time.Date(2015, 12, 25, 0, 0, 0, 0, time.Local))},
 	{"select cast('2007-05-08 12:35:29.1234567' as datetime2)", match(time.Date(2007, 5, 8, 12, 35, 29, 1234567e2, time.Local))},
 	{"select cast(NULL as datetime2)", match(nil)},
+
+	// time(7)
+	{"select cast('12:35:29.1234567' as time(7))", match(time.Date(1, 1, 1, 12, 35, 29, 1234567e2, time.Local))},
+	{"select cast(NULL as time(7))", match(nil)},
 }
 
 var typeTestsToFail = []string{
@@ -710,6 +715,7 @@ func TestMSSQLTypes(t *testing.T) {
 		tests = append(tests, typeMSSQL2008Tests...)
 	}
 	for _, r := range tests {
+
 		rows, err := db.Query(r.query)
 		if err != nil {
 			t.Errorf("db.Query(%q) failed: %v", r.query, err)
